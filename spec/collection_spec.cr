@@ -20,6 +20,24 @@ describe Tmdb::Collection do
     end
   end
 
+  it "should get original language" do
+    VCR.use_cassette("tmdb") do
+      collection = Tmdb::Collection.detail(528)
+      original_language = collection.original_language
+
+      original_language.should be_a(String)
+    end
+  end
+
+  it "should get original name" do
+    VCR.use_cassette("tmdb") do
+      collection = Tmdb::Collection.detail(528)
+      original_name = collection.original_name
+
+      original_name.should be_a(String)
+    end
+  end
+
   context "#backdrops" do
     it "should get a list" do
       VCR.use_cassette("tmdb") do
@@ -59,7 +77,7 @@ describe Tmdb::Collection do
         collection = Tmdb::Collection.detail(528)
         posters = collection.posters
 
-        posters.size.should eq(19)
+        posters.size.should eq(26)
         posters.should be_a(Array(Tmdb::Poster))
       end
     end
@@ -69,7 +87,7 @@ describe Tmdb::Collection do
         collection = Tmdb::Collection.detail(528)
         posters = collection.posters(language: "es")
 
-        posters.size.should eq(3)
+        posters.size.should eq(9)
         posters.should be_a(Array(Tmdb::Poster))
       end
     end
@@ -92,7 +110,7 @@ describe Tmdb::Collection do
         collection = Tmdb::Collection.detail(528)
         translations = collection.translations
 
-        translations.size.should eq(32)
+        translations.size.should eq(39)
         translations.should be_a(Array(Tmdb::Translation))
       end
     end
@@ -102,7 +120,7 @@ describe Tmdb::Collection do
         collection = Tmdb::Collection.detail(528)
         translations = collection.translations(language: "es")
 
-        translations.size.should eq(32)
+        translations.size.should eq(39)
         translations.should be_a(Array(Tmdb::Translation))
       end
     end

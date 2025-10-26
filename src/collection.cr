@@ -15,6 +15,8 @@ class Tmdb::Collection
   getter poster_path : String?
   # Path to default backdrop image
   getter backdrop_path : String?
+  @original_language : String? = nil
+  @original_name : String? = nil
   @overview : String? = nil
   @parts : Array(MovieResult) = [] of MovieResult
 
@@ -33,6 +35,8 @@ class Tmdb::Collection
   def initialize(data : JSON::Any)
     @id = data["id"].as_i64
     @name = data["name"].as_s
+    @original_language = data["original_language"].as_s
+    @original_name = data["original_name"].as_s
     @overview = data["overview"].as_s
     @poster_path = data["poster_path"].as_s?
     @backdrop_path = data["backdrop_path"].as_s?
@@ -51,6 +55,16 @@ class Tmdb::Collection
   def overview : String
     refresh! unless full_initialized?
     @overview.not_nil!
+  end
+
+  def original_language : String
+    refresh! unless full_initialized?
+    @original_language.not_nil!
+  end
+
+  def original_name : String
+    refresh! unless full_initialized?
+    @original_name.not_nil!
   end
 
   # Get the images for a collection by id.
@@ -86,6 +100,8 @@ class Tmdb::Collection
 
     @id = obj.id
     @name = obj.name
+    @original_language = obj.original_language
+    @original_name = obj.original_name
     @overview = obj.overview
     @poster_path = obj.poster_path
     @backdrop_path = obj.backdrop_path
