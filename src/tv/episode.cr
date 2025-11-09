@@ -15,6 +15,7 @@ class Tmdb::Tv::Episode
   getter overview : String
   getter id : Int64
   getter production_code : String?
+  getter runtime : Int32?
   getter season_number : Int32
   getter still_path : String?
   getter vote_average : Float64
@@ -41,6 +42,7 @@ class Tmdb::Tv::Episode
     @overview = data["overview"].as_s
     @id = data["id"].as_i64
     @production_code = data["production_code"].as_s?
+    @runtime = data["runtime"].as_i?
     @season_number = data["season_number"].as_i
     @still_path = data["still_path"].as_s?
     @vote_average = data["vote_average"].as_f
