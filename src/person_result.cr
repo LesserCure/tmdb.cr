@@ -1,5 +1,6 @@
 require "./tv/show_result"
 require "./movie_result"
+require "./person"
 require "./profile_urls"
 
 class Tmdb::PersonResult
@@ -7,16 +8,22 @@ class Tmdb::PersonResult
 
   getter profile_path : String?
   getter adult : Bool
+  getter gender : Person::Gender
   getter id : Int64
+  getter known_for_department : String?
   getter name : String
+  getter original_name : String
   getter popularity : Float64
   getter known_for : Array(MovieResult | Tv::ShowResult)
 
   def initialize(data : JSON::Any)
     @profile_path = data["profile_path"].as_s?
     @adult = data["adult"].as_bool
+    @gender = Person::Gender.from_value(data["gender"].as_i)
     @id = data["id"].as_i64
+    @known_for_department = data["known_for_department"].as_s?
     @name = data["name"].as_s
+    @original_name = data["original_name"].as_s
     @popularity = data["popularity"]? ? Tmdb.resilient_parse_float64(data["popularity"]) : 0.0
 
     begin
