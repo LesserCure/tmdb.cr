@@ -184,15 +184,15 @@ class Tmdb::Person
   end
 
   # Get the movie and TV credits together in a single response.
-  def combined_credits(language : String? = nil) : Array(Person::Cast | Person::Crew)
+  def combined_credits(language : String? = nil) : Array(Person::CombinedCast | Person::CombinedCrew)
     filters = FilterFactory.create_language(language)
 
     res = Resource.new("/person/#{id}/combined_credits", filters)
     data = res.get
-    ret = [] of Person::Cast | Person::Crew
+    ret = [] of Person::CombinedCast | Person::CombinedCrew
 
-    data["cast"].as_a.reduce(ret) { |ret, cast| ret << Person::Cast.new(cast) }
-    data["crew"].as_a.reduce(ret) { |ret, crew| ret << Person::Crew.new(crew) }
+    data["cast"].as_a.reduce(ret) { |ret, cast| ret << Person::CombinedCast.new(cast) }
+    data["crew"].as_a.reduce(ret) { |ret, crew| ret << Person::CombinedCrew.new(crew) }
 
     ret
   end

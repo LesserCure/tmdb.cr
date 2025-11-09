@@ -1,3 +1,4 @@
+require "./combined_credit"
 require "./credit_base"
 
 class Tmdb::Person
@@ -10,6 +11,14 @@ class Tmdb::Person
 
       @department = data["department"].as_s
       @job = data["job"].as_s
+    end
+  end
+
+  class CombinedCrew < Crew
+    include CombinedCredit
+
+    def initialize(data : JSON::Any)
+      super(data)
     end
   end
 end

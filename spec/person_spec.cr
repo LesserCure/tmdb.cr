@@ -84,7 +84,7 @@ describe Tmdb::Person do
         credits = person.combined_credits
 
         credits.size.should eq(109)
-        credits.should be_a(Array(Tmdb::Person::Cast | Tmdb::Person::Crew))
+        credits.should be_a(Array(Tmdb::Person::CombinedCast | Tmdb::Person::CombinedCrew))
       end
     end
 
@@ -94,7 +94,7 @@ describe Tmdb::Person do
         credits = person.combined_credits
 
         credits.each do |credit|
-          credit.should be_a(Tmdb::Person::Cast | Tmdb::Person::Crew)
+          credit.should be_a(Tmdb::Person::CombinedCast | Tmdb::Person::CombinedCrew)
         end
       end
     end
