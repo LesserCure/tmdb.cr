@@ -35,6 +35,7 @@ class Tmdb::Tv::Show
     ReturningSeries
   end
 
+  getter? adult : Bool
   getter backdrop_path : String?
   getter created_by : Array(Credit)
   getter episode_run_time : Array(Int32)
@@ -47,7 +48,7 @@ class Tmdb::Tv::Show
   getter last_air_date : Time?
   getter last_episode_to_air : Tv::Episode?
   getter name : String
-  getter next_episode_to_air : Int32?
+  getter next_episode_to_air : Tv::Episode?
   getter networks : Array(Network)
   getter number_of_episodes : Int32?
   getter number_of_seasons : Int32
@@ -125,6 +126,7 @@ class Tmdb::Tv::Show
   end
 
   def initialize(data : JSON::Any)
+    @adult = data["adult"].as_bool
     @backdrop_path = data["backdrop_path"].as_s?
     @created_by = data["created_by"].as_a.map { |credit| Credit.detail(credit["credit_id"].as_s) }
     @episode_run_time = data["episode_run_time"].as_a.map(&.as_i)
@@ -135,9 +137,9 @@ class Tmdb::Tv::Show
     @in_production = data["in_production"].as_bool
     @languages = data["languages"].as_a.map(&.as_s)
     @last_air_date = Tmdb.parse_date(data["last_air_date"])
-    @last_episode_to_air = Tv::Episode.new(data["last_episode_to_air"], id) unless data["last_episode_to_air"]?
+    @last_episode_to_air = data["last_episode_to_air"]?.is_a?(Hash) ? Tv::Episode.new(data["last_episode_to_air"], id) : nil
     @name = data["name"].as_s
-    @next_episode_to_air = data["next_episode_to_air"].as_i?
+    @next_episode_to_air = data["next_episode_to_air"]?.is_a?(Hash) ? Tv::Episode.new(data["next_episode_to_air"], id) : nil
     @networks = data["networks"].as_a.map { |network| Network.new(network) }
     @number_of_episodes = data["number_of_episodes"].as_i?
     @number_of_seasons = data["number_of_seasons"].as_i
