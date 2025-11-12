@@ -29,7 +29,7 @@ class Tmdb::MovieResult
 
     begin
       genre_ids = data["genre_ids"].as_a.map { |genre| Tmdb.resilient_parse_int32(genre) }
-    rescue TypeCastError
+    rescue KeyError | TypeCastError
       genre_ids = [] of Int32
     end
 
@@ -41,9 +41,9 @@ class Tmdb::MovieResult
     @title = data["title"].as_s
     @backdrop_path = data["backdrop_path"]? ? data["backdrop_path"].as_s? : nil
     @popularity = data["popularity"]? ? Tmdb.resilient_parse_float64(data["popularity"]) : 0.0
-    @vote_count = Tmdb.resilient_parse_int32(data["vote_count"])
-    @video = data["video"].as_bool
-    @vote_average = Tmdb.resilient_parse_float64(data["vote_average"])
+    @vote_count = data["vote_count"]? ? Tmdb.resilient_parse_int32(data["vote_count"]) : 0
+    @video = data["video"]?.try &.as_bool || false
+    @vote_average = data["vote_average"]? ? Tmdb.resilient_parse_float64(data["vote_average"]) : 0.0
   end
 
   def movie_detail(language : String? = nil) : Movie
