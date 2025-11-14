@@ -13,6 +13,7 @@ class Tmdb::Tv::Season
   getter name : String
   getter overview : String
   getter show_id : Int64
+  getter vote_average : Float64
 
   # Get the TV season details by id.
   def self.detail(show_id : Int64, season_number : Int32, language : String? = nil) : Season
@@ -28,6 +29,7 @@ class Tmdb::Tv::Season
     @id = data["id"].as_i64
     @name = data["name"].as_s
     @overview = data["overview"].as_s
+    @vote_average = data["vote_average"].as_f
   end
 
   # Get the aggregate credits for TV season.
