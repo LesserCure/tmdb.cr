@@ -33,6 +33,48 @@ class Tmdb::Tv::Episode
     Tv::Episode.new(res.get, show_id)
   end
 
+  def self.changes(show_id : Int64, season_number : Int32, episode_number : Int32, start_date : Time? = nil, end_date : Time? = nil) : Array(Change)
+    filters = FilterFactory::Filter.new
+    filters[:start_date] = start_date.to_s("%Y-%m-%d") unless start_date.nil?
+    filters[:end_date] = end_date.to_s("%Y-%m-%d") unless end_date.nil?
+
+    res = Resource.new("/tv/episode/#{id}/changes", filters)
+    data = res.get
+
+    data["changes"].as_a.map { |change| Change.new(change) }
+  end
+
+  # Get the credits (cast, crew and guest stars) for a TV episode.
+  def self.credits(show_id : Int64, season_number : Int32, episode_number : Int32, language : String? = nil) : Array(Crew | Cast | GuestStar)
+    url = "/tv/#{show_id}/season/#{season_number}/episode/#{episode_number}"
+    res = Resource.new(url, FilterFactory.create_language(language))
+    data = res.get
+    ret = [] of Cast | Crew | GuestStar
+
+    data["cast"].as_a.reduce(ret) { |ret, cast| ret << Cast.new(cast) } if data["cast"]?
+    data["crew"].as_a.reduce(ret) { |ret, crew| ret << Crew.new(crew) } if data["crew"]?
+    data["guest_stars"].as_a.reduce(ret) { |ret, guest_star| ret << GuestStar.new(guest_star) } if data["guest_stars"]?
+
+    ret
+  end
+
+  def self.external_ids(show_id : Int64, season_number : Int32, episode_number : Int32) : Array(ExternalId)
+    res = Resource.new("/tv/#{show_id}/season/#{season_number}/episode/#{episode_number}/external_ids")
+    data = res.get
+    ret = [] of ExternalId
+
+    %w(imdb_id freebase_mid freebase_id tvdb_id tvrage_id).each do |provider|
+      ret << ExternalId.new(provider, data[provider].as_s) if data[provider].as_s?
+    end
+
+    ret
+  end
+
+  def self.translations(show_id : Int64, season_number : Int32, episode_number : Int32) : Array(Tv::Translation)
+    res = Resource.new("/tv/#{show_id}/season/#{season_number}/episode/#{episode_number}/translations")
+    res.get["translations"].as_a.map { |tr| Tv::Translation.new(tr) }
+  end
+
   def initialize(data : JSON::Any, @show_id : Int64)
     @air_date = Tmdb.parse_date(data["air_date"])
     @crew = data["crew"].as_a.map { |crew| Crew.new(crew) } if data["crew"]?
@@ -66,28 +108,12 @@ class Tmdb::Tv::Episode
   # You can query up to 14 days in a single query by using the `start_date` and
   # `end_date` query parameters.
   def changes(start_date : Time? = nil, end_date : Time? = nil) : Array(Change)
-    filters = FilterFactory::Filter.new
-    filters[:start_date] = start_date.to_s("%Y-%m-%d") unless start_date.nil?
-    filters[:end_date] = end_date.to_s("%Y-%m-%d") unless end_date.nil?
-
-    res = Resource.new("/tv/episode/#{id}/changes", filters)
-    data = res.get
-
-    data["changes"].as_a.map { |change| Change.new(change) }
+    self.class.changes(show_id, season_number, episode_number, start_date, end_date)
   end
 
   # Get the credits (cast, crew and guest stars) for a TV episode.
   def credits(language : String? = nil) : Array(Crew | Cast | GuestStar)
-    url = "/tv/#{show_id}/season/#{season_number}/episode/#{episode_number}"
-    res = Resource.new(url, FilterFactory.create_language(language))
-    data = res.get
-    ret = [] of Cast | Crew | GuestStar
-
-    data["cast"].as_a.reduce(ret) { |ret, cast| ret << Cast.new(cast) } if data["cast"]?
-    data["crew"].as_a.reduce(ret) { |ret, crew| ret << Crew.new(crew) } if data["crew"]?
-    data["guest_stars"].as_a.reduce(ret) { |ret, guest_star| ret << GuestStar.new(guest_star) } if data["guest_stars"]?
-
-    ret
+    self.class.credits(show_id, season_number, episode_number, language)
   end
 
   # Get the external ids for a TV episode. We currently support the following
@@ -101,15 +127,7 @@ class Tmdb::Tv::Episode
   #
   # \*Defunct or no longer available as a service.
   def external_ids : Array(ExternalId)
-    res = Resource.new("/tv/#{show_id}/season/#{season_number}/episode/#{episode_number}/external_ids")
-    data = res.get
-    ret = [] of ExternalId
-
-    %w(imdb_id freebase_mid freebase_id tvdb_id tvrage_id).each do |provider|
-      ret << ExternalId.new(provider, data[provider].as_s) if data[provider].as_s?
-    end
-
-    ret
+    self.class.external_ids(show_id, season_number, episode_number)
   end
 
   # Get the images that belong to a TV episode.
@@ -125,8 +143,7 @@ class Tmdb::Tv::Episode
 
   # Get the translation data for an episode.
   def translations : Array(Tv::Translation)
-    res = Resource.new("/tv/#{show_id}/season/#{season_number}/episode/#{episode_number}/translations")
-    res.get["translations"].as_a.map { |tr| Tv::Translation.new(tr) }
+    self.class.translations(show_id, season_number, episode_number)
   end
 
   # Get the videos that have been added to a TV episode.

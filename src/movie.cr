@@ -131,6 +131,103 @@ class Tmdb::Movie
     LazyIterator(MovieResult).new(res, skip_cache: skip_cache)
   end
 
+  # Get all of the alternative titles for a movie by id.
+  def self.alternative_titles(movie_id : Int64, country : String? = nil) : Array(AlternativeTitle)
+    res = Resource.new("/movie/#{movie_id}/alternative_titles", FilterFactory.create_country(country))
+    res.get["titles"].as_a.map { |title| AlternativeTitle.new(title) }
+  end
+
+  # Get the changes for a movie. By default only the last 24 hours are returned.
+  #
+  # You can query up to 14 days in a single query by using the `start_date` and
+  # `end_date` query parameters.
+  def self.changes(movie_id : Int64, start_date : Time? = nil, end_date : Time? = nil) : Array(Change)
+    filters = FilterFactory::Filter.new
+    filters[:start_date] = start_date.to_s("%Y-%m-%d") unless start_date.nil?
+    filters[:end_date] = end_date.to_s("%Y-%m-%d") unless end_date.nil?
+
+    res = Resource.new("/movie/#{movie_id}/changes", filters)
+    data = res.get
+
+    data["changes"].as_a.map { |change| Change.new(change) }
+  end
+
+  def self.credits(movie_id : Int64, language : String? = nil) : Array(Movie::Cast | Movie::Crew)
+    res = Resource.new("/movie/#{movie_id}/credits", FilterFactory.create_language(language))
+    data = res.get
+    ret = [] of Movie::Cast | Movie::Crew
+
+    data["cast"].as_a.reduce(ret) { |ret, cast| ret << Movie::Cast.new(cast) }
+    data["crew"].as_a.reduce(ret) { |ret, crew| ret << Movie::Crew.new(crew) }
+
+    ret
+  end
+
+  def self.cast(movie_id : Int64, language : String? = nil) : Array(Movie::Cast)
+    credits(movie_id, language).select(Movie::Cast)
+  end
+
+  def self.crew(movie_id : Int64, language : String? = nil) : Array(Movie::Crew)
+    credits(movie_id, language).select(Movie::Crew)
+  end
+
+  # Get the external ids for a movie.
+  def self.external_ids(movie_id : Int64) : Array(ExternalId)
+    ret = [] of ExternalId
+    res = Resource.new("/movie/#{movie_id}/external_ids")
+    data = res.get
+
+    %w(imdb_id facebook_id instagram_id twitter_id).each do |provider|
+      ret << ExternalId.new(provider, data[provider].as_s) if data[provider].as_s?
+    end
+
+    ret
+  end
+
+  # Get the keywords that have been added to a movie.
+  def self.keywords(movie_id : Int64) : Array(Keyword)
+    res = Resource.new("/movie/#{movie_id}/keywords")
+    res.get["keywords"].as_a.map { |keyword| Keyword.new(keyword) }
+  end
+
+  def self.recommendations(movie_id : Int64, language : String? = nil) : LazyIterator(MovieResult)
+    res = Resource.new("/movie/#{movie_id}/recommendations", FilterFactory.create_language(language))
+    LazyIterator(MovieResult).new(res)
+  end
+
+  # Get the release date along with the certification for a movie.
+  def self.release_dates(movie_id : Int64) : Array(Tuple(String, Array(Release)))
+    res = Resource.new("/movie/#{movie_id}/release_dates")
+
+    res.get["results"].as_a.map do |release|
+      country_code = release["iso_3166_1"].as_s
+      releases = release["release_dates"].as_a.map { |rd| Release.new(rd) }
+
+      {country_code, releases}
+    end
+  end
+
+  # Get the user reviews for a movie.
+  def self.user_reviews(movie_id : Int64, language : String? = nil) : LazyIterator(Review)
+    res = Resource.new("/movie/#{movie_id}/reviews", FilterFactory.create_language(language))
+    LazyIterator(Review).new(res)
+  end
+
+  # Get a list of similar movies. This is not the same as the "Recommendation"
+  # system you see on the website.
+  #
+  # These items are assembled by looking at keywords and genres.
+  def self.similar_movies(movie_id : Int64, language : String? = nil) : LazyIterator(MovieResult)
+    res = Resource.new("/movie/#{movie_id}/similar", FilterFactory.create_language(language))
+    LazyIterator(MovieResult).new(res)
+  end
+
+  # Get a list of translations that have been created for a movie.
+  def self.translations(movie_id : Int64) : Array(Translation)
+    res = Resource.new("/movie/#{movie_id}/translations")
+    res.get["translations"].as_a.map { |tr| Translation.new(tr) }
+  end
+
   def initialize(data : JSON::Any)
     @adult = data["adult"].as_bool
     @backdrop_path = data["backdrop_path"].as_s?
@@ -190,8 +287,7 @@ class Tmdb::Movie
 
   # Get all of the alternative titles for a movie.
   def alternative_titles(country : String? = nil) : Array(AlternativeTitle)
-    res = Resource.new("/movie/#{id}/alternative_titles", FilterFactory.create_country(country))
-    res.get["titles"].as_a.map { |title| AlternativeTitle.new(title) }
+    self.alternative_titles(id, country)
   end
 
   # Get the changes for a movie. By default only the last 24 hours are returned.
@@ -199,34 +295,20 @@ class Tmdb::Movie
   # You can query up to 14 days in a single query by using the `start_date` and
   # `end_date` query parameters.
   def changes(start_date : Time? = nil, end_date : Time? = nil) : Array(Change)
-    filters = FilterFactory::Filter.new
-    filters[:start_date] = start_date.to_s("%Y-%m-%d") unless start_date.nil?
-    filters[:end_date] = end_date.to_s("%Y-%m-%d") unless end_date.nil?
-
-    res = Resource.new("/movie/#{id}/changes", filters)
-    data = res.get
-
-    data["changes"].as_a.map { |change| Change.new(change) }
+    self.changes(id, start_date, end_date)
   end
 
   # Get the cast and crew for a movie.
   def credits(language : String? = nil) : Array(Movie::Cast | Movie::Crew)
-    res = Resource.new("/movie/#{id}/credits", FilterFactory.create_language(language))
-    data = res.get
-    ret = [] of Movie::Cast | Movie::Crew
-
-    data["cast"].as_a.reduce(ret) { |ret, cast| ret << Movie::Cast.new(cast) }
-    data["crew"].as_a.reduce(ret) { |ret, crew| ret << Movie::Crew.new(crew) }
-
-    ret
+    self.credits(id, language)
   end
 
   def cast(language : String? = nil) : Array(Movie::Cast)
-    credits(language).select(Movie::Cast)
+    self.cast(id, language)
   end
 
   def crew(language : String? = nil) : Array(Movie::Crew)
-    credits(language).select(Movie::Crew)
+    self.crew(id, language)
   end
 
   # Get the external ids for a movie. We currently support the following
@@ -237,15 +319,7 @@ class Tmdb::Movie
   # * Instagram
   # * Twitter
   def external_ids : Array(ExternalId)
-    ret = [] of ExternalId
-    res = Resource.new("/movie/#{id}/external_ids")
-    data = res.get
-
-    %w(imdb_id facebook_id instagram_id twitter_id).each do |provider|
-      ret << ExternalId.new(provider, data[provider].as_s) if data[provider].as_s?
-    end
-
-    ret
+    self.external_ids(id)
   end
 
   # Get the images that belong to a movie.
@@ -279,32 +353,22 @@ class Tmdb::Movie
 
   # Get the keywords that have been added to a movie.
   def keywords : Array(Keyword)
-    res = Resource.new("/movie/#{id}/keywords")
-    res.get["keywords"].as_a.map { |keyword|  Keyword.new(keyword) }
+    self.class.keywords(id)
   end
 
   # Get a list of recommended movies for a movie.
   def recommendations(language : String? = nil) : LazyIterator(MovieResult)
-    res = Resource.new("/movie/#{id}/recommendations", FilterFactory.create_language(language))
-    LazyIterator(MovieResult).new(res)
+    self.class.recommendations(id, language)
   end
 
   # Get the release date along with the certification for a movie.
   def release_dates : Array(Tuple(String, Array(Release)))
-    res = Resource.new("/movie/#{id}/release_dates")
-
-    res.get["results"].as_a.map do |release|
-      country_code = release["iso_3166_1"].as_s
-      releases = release["release_dates"].as_a.map { |rd| Release.new(rd) }
-
-      {country_code, releases}
-    end
+    self.class.release_dates(id)
   end
 
   # Get the user reviews for a movie.
   def user_reviews(language : String? = nil) : LazyIterator(Review)
-    res = Resource.new("/movie/#{id}/reviews", FilterFactory.create_language(language))
-    LazyIterator(Review).new(res)
+    self.class.user_reviews(id, language)
   end
 
   # Get a list of similar movies. This is not the same as the "Recommendation"
@@ -312,14 +376,12 @@ class Tmdb::Movie
   #
   # These items are assembled by looking at keywords and genres.
   def similar_movies(language : String? = nil) : LazyIterator(MovieResult)
-    res = Resource.new("/movie/#{id}/similar", FilterFactory.create_language(language))
-    LazyIterator(MovieResult).new(res)
+    self.class.similar_movies(id, language)
   end
 
   # Get a list of translations that have been created for a movie.
   def translations : Array(Translation)
-    res = Resource.new("/movie/#{id}/translations")
-    res.get["translations"].as_a.map { |tr| Translation.new(tr) }
+    self.class.translations(id)
   end
 
   # Get the videos that have been added to a movie.

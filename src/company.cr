@@ -21,6 +21,14 @@ class Tmdb::Company
     Company.new(res.get)
   end
 
+  # Get the alternative names of a company by id.
+  def alternative_names(company_id : Int64) : Array(String)
+    res = Resource.new("/company/#{company_id}/alternative_names")
+    res.get["results"].as_a.map { |an| an["name"].as_s }
+  rescue NotFound
+    [] of String
+  end
+
   def initialize(data : JSON::Any)
     @description = data["description"].as_s
     @headquarters = data["headquarters"].as_s
@@ -69,10 +77,7 @@ class Tmdb::Company
 
   # Get the alternative names of a company.
   def alternative_names : Array(String)
-    res = Resource.new("/company/#{id}/alternative_names")
-    res.get["results"].as_a.map { |an| an["name"].as_s }
-  rescue NotFound
-    [] of String
+    self.class.alternative_names(id)
   end
 
   # Get a company logos.

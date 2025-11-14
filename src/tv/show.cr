@@ -125,6 +125,122 @@ class Tmdb::Tv::Show
     LazyIterator(ShowResult).new(res, skip_cache: skip_cache)
   end
 
+  # Get the aggregate credits (cast and crew) that have been added to a TV show.
+  #
+  # This call differs from the main `#credits` call in that it does not return
+  # the newest season but rather, is a view of all the entire cast & crew for
+  # all episodes belonging to a TV show.
+  def self.aggregated_credits(show_id : Int64, language : String? = nil) : Array(Tv::AggregatedCast | Tv::AggregatedCrew)
+    res = Resource.new("/tv/#{id}/aggregate_credits", FilterFactory.create_language(language))
+    data = res.get
+    ret = [] of Tv::AggregatedCast | Tv::AggregatedCrew
+
+    data["cast"].as_a.reduce(ret) { |ret, cast| ret << Tv::AggregatedCast.new(cast) }
+    data["crew"].as_a.reduce(ret) { |ret, crew| ret << Tv::AggregatedCrew.new(crew) }
+
+    ret
+  end
+
+  # Returns all of the alternative titles for a TV show.
+  def self.alternative_titles(show_id : Int64, language : String? = nil) : Array(AlternativeTitle)
+    res = Resource.new("/tv/#{id}/alternative_titles", FilterFactory.create_language(language))
+    res.get["results"].as_a.map { |title| AlternativeTitle.new(title) }
+  end
+
+  def self.changes(show_id : Int64, start_date : Time? = nil, end_date : Time? = nil) : Array(Change)
+    filters = FilterFactory::Filter.new
+    filters[:start_date] = start_date.to_s("%Y-%m-%d") unless start_date.nil?
+    filters[:end_date] = end_date.to_s("%Y-%m-%d") unless end_date.nil?
+
+    res = Resource.new("/tv/#{id}/changes", filters)
+    data = res.get
+
+    data["changes"].as_a.map { |change| Change.new(change) }
+  end
+
+  # Get the list of content ratings (certifications) that have been added to a
+  # TV show.
+  def self.content_ratings(show_id : Int64, language : String? = nil) : Array(Tv::Rating)
+    res = Resource.new("/tv/#{id}/content_ratings", FilterFactory.create_language(language))
+    res.get["results"].as_a.map { |rating| Tv::Rating.new(rating) }
+  end
+
+  # Get the credits (cast and crew) that have been added to a TV show.
+  def self.credits(show_id : Int64, language : String? = nil) : Array(Cast | Crew)
+    filters = FilterFactory.create_language(language)
+
+    res = Resource.new("/tv/#{id}/credits")
+    data = res.get
+    ret = [] of Cast | Crew
+
+    data["cast"].as_a.reduce(ret) { |ret, cast| ret << Cast.new(cast) }
+    data["crew"].as_a.reduce(ret) { |ret, crew| ret << Crew.new(crew) }
+
+    ret
+  end
+
+  # Get all of the episode groups that have been created for a TV show. With a
+  # group ID you can call the `Tmdb::Tv::EpisodeGroup.detail` method.
+  def self.episode_groups(show_id : Int64, language : String? = nil) : Array(Tv::EpisodeGroupResult)
+    res = Resource.new("/tv/#{id}/episode_groups", FilterFactory.create_language(language))
+    res.get["results"].as_a.map { |episode_group| Tv::EpisodeGroupResult.new(episode_group) }
+  end
+
+  def self.external_ids(show_id : Int64, language : String? = nil) : Array(ExternalId)
+    res = Resource.new("/tv/#{id}/external_ids", FilterFactory.create_language(language))
+    data = res.get
+    ret = [] of ExternalId
+
+    %w(imdb_id freebase_mid freebase_id tvdb_id tvrage_id facebook_id instagram_id twitter_id).each do |provider|
+      ret << ExternalId.new(provider, data[provider].as_s) if data[provider].as_s?
+    end
+
+    ret
+  end
+
+  # Get the keywords that have been added to a TV show.
+  def self.keywords(show_id : Int64) : Array(Keyword)
+    res = Resource.new("/tv/#{id}/keywords")
+    res.get["results"].as_a.map { |keyword|  Keyword.new(keyword) }
+  end
+
+  # Get the list of TV show recommendations for this item.
+  def self.recommendations(show_id : Int64, language : String? = nil) : LazyIterator(ShowResult)
+    res = Resource.new("/tv/#{id}/recommendations", FilterFactory.create_language(language))
+    LazyIterator(ShowResult).new(res)
+  end
+
+  # Get the reviews for a TV show.
+  def self.reviews(show_id : Int64, language : String? = nil) : LazyIterator(Review)
+    res = Resource.new("/tv/#{id}/reviews", FilterFactory.create_language(language))
+    LazyIterator(Review).new(res)
+  end
+
+  # Get a list of seasons or episodes that have been screened in a film festival
+  # or theatre.
+  def self.screened_theatrically(show_id : Int64) : Array(NamedTuple(episode_number: Int32, season_number: Int32))
+    res = Resource.new("/tv/#{id}/screened_theatrically")
+    data = res.get
+
+    data["results"].as_a.map do |result|
+      { episode_number: result["episode_number"].as_i,
+        season_number: result["season_number"].as_i }
+    end
+  end
+
+  # Get a list of similar TV shows. These items are assembled by looking at
+  # keywords and genres.
+  def self.similar_tv_shows(show_id : Int64, language : String? = nil) : LazyIterator(ShowResult)
+    res = Resource.new("/tv/#{id}/similar", FilterFactory.create_language(language))
+    LazyIterator(ShowResult).new(res)
+  end
+
+  # Get a list of the translations that exist for a TV show.
+  def self.translations(show_id : Int64) : Array(Tv::Translation)
+    res = Resource.new("/tv/#{id}/translations")
+    res.get["translations"].as_a.map { |tr| Tv::Translation.new(tr) }
+  end
+
   def initialize(data : JSON::Any)
     @adult = data["adult"].as_bool
     @backdrop_path = data["backdrop_path"].as_s?
@@ -166,20 +282,12 @@ class Tmdb::Tv::Show
   # the newest season but rather, is a view of all the entire cast & crew for
   # all episodes belonging to a TV show.
   def aggregated_credits(language : String? = nil) : Array(Tv::AggregatedCast | Tv::AggregatedCrew)
-    res = Resource.new("/tv/#{id}/aggregate_credits", FilterFactory.create_language(language))
-    data = res.get
-    ret = [] of Tv::AggregatedCast | Tv::AggregatedCrew
-
-    data["cast"].as_a.reduce(ret) { |ret, cast| ret << Tv::AggregatedCast.new(cast) }
-    data["crew"].as_a.reduce(ret) { |ret, crew| ret << Tv::AggregatedCrew.new(crew) }
-
-    ret
+    self.class.aggregated_credits(id, language)
   end
 
   # Returns all of the alternative titles for a TV show.
   def alternative_titles(language : String? = nil) : Array(AlternativeTitle)
-    res = Resource.new("/tv/#{id}/alternative_titles", FilterFactory.create_language(language))
-    res.get["results"].as_a.map { |title| AlternativeTitle.new(title) }
+    self.class.alternative_titles(id, language)
   end
 
   # Get the changes for a TV show. By default only the last 24 hours are
@@ -196,42 +304,24 @@ class Tmdb::Tv::Show
   # and [episode changes](https://developers.themoviedb.org/3/tv-episodes/get-tv-episode-changes)
   # methods to look these up individually.
   def changes(start_date : Time? = nil, end_date : Time? = nil) : Array(Change)
-    filters = FilterFactory::Filter.new
-    filters[:start_date] = start_date.to_s("%Y-%m-%d") unless start_date.nil?
-    filters[:end_date] = end_date.to_s("%Y-%m-%d") unless end_date.nil?
-
-    res = Resource.new("/tv/#{id}/changes", filters)
-    data = res.get
-
-    data["changes"].as_a.map { |change| Change.new(change) }
+    self.class.changes(id, start_date, end_date)
   end
 
   # Get the list of content ratings (certifications) that have been added to a
   # TV show.
   def content_ratings(language : String? = nil) : Array(Tv::Rating)
-    res = Resource.new("/tv/#{id}/content_ratings", FilterFactory.create_language(language))
-    res.get["results"].as_a.map { |rating| Tv::Rating.new(rating) }
+    self.class.content_ratings(id, language)
   end
 
   # Get the credits (cast and crew) that have been added to a TV show.
   def credits(language : String? = nil) : Array(Cast | Crew)
-    filters = FilterFactory.create_language(language)
-
-    res = Resource.new("/tv/#{id}/credits")
-    data = res.get
-    ret = [] of Cast | Crew
-
-    data["cast"].as_a.reduce(ret) { |ret, cast| ret << Cast.new(cast) }
-    data["crew"].as_a.reduce(ret) { |ret, crew| ret << Crew.new(crew) }
-
-    ret
+    self.class.credits(id, language)
   end
 
   # Get all of the episode groups that have been created for a TV show. With a
   # group ID you can call the `Tmdb::Tv::EpisodeGroup.detail` method.
   def episode_groups(language : String? = nil) : Array(Tv::EpisodeGroupResult)
-    res = Resource.new("/tv/#{id}/episode_groups", FilterFactory.create_language(language))
-    res.get["results"].as_a.map { |episode_group| Tv::EpisodeGroupResult.new(episode_group) }
+    self.class.episode_groups(id, language)
   end
 
   # Get the external ids for a TV show. We currently support the following
@@ -248,15 +338,7 @@ class Tmdb::Tv::Show
   #
   # \* Defunct or no longer available as a service
   def external_ids(language : String? = nil) : Array(ExternalId)
-    res = Resource.new("/tv/#{id}/external_ids", FilterFactory.create_language(language))
-    data = res.get
-    ret = [] of ExternalId
-
-    %w(imdb_id freebase_mid freebase_id tvdb_id tvrage_id facebook_id instagram_id twitter_id).each do |provider|
-      ret << ExternalId.new(provider, data[provider].as_s) if data[provider].as_s?
-    end
-
-    ret
+    self.class.external_ids(id, language)
   end
 
   # Get the images that belong to a TV show.
@@ -287,45 +369,34 @@ class Tmdb::Tv::Show
 
   # Get the keywords that have been added to a TV show.
   def keywords : Array(Keyword)
-    res = Resource.new("/tv/#{id}/keywords")
-    res.get["results"].as_a.map { |keyword|  Keyword.new(keyword) }
+    self.class.keywords(id)
   end
 
   # Get the list of TV show recommendations for this item.
   def recommendations(language : String? = nil) : LazyIterator(ShowResult)
-    res = Resource.new("/tv/#{id}/recommendations", FilterFactory.create_language(language))
-    LazyIterator(ShowResult).new(res)
+    self.class.recommendations(id, language)
   end
 
   # Get the reviews for a TV show.
   def reviews(language : String? = nil) : LazyIterator(Review)
-    res = Resource.new("/tv/#{id}/reviews", FilterFactory.create_language(language))
-    LazyIterator(Review).new(res)
+    self.class.reviews(id, language)
   end
 
   # Get a list of seasons or episodes that have been screened in a film festival
   # or theatre.
   def screened_theatrically : Array(NamedTuple(episode_number: Int32, season_number: Int32))
-    res = Resource.new("/tv/#{id}/screened_theatrically")
-    data = res.get
-
-    data["results"].as_a.map do |result|
-      { episode_number: result["episode_number"].as_i,
-        season_number: result["season_number"].as_i }
-    end
+    self.class.screened_theatrically(id)
   end
 
   # Get a list of similar TV shows. These items are assembled by looking at
   # keywords and genres.
   def similar_tv_shows(language : String? = nil) : LazyIterator(ShowResult)
-    res = Resource.new("/tv/#{id}/similar", FilterFactory.create_language(language))
-    LazyIterator(ShowResult).new(res)
+    self.class.similar_tv_shows(id, language)
   end
 
   # Get a list of the translations that exist for a TV show.
   def translations : Array(Tv::Translation)
-    res = Resource.new("/tv/#{id}/translations")
-    res.get["translations"].as_a.map { |tr| Tv::Translation.new(tr) }
+    self.class.translations(id)
   end
 
   # Get the videos that have been added to a TV show.

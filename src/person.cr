@@ -52,6 +52,83 @@ class Tmdb::Person
     LazyIterator(PersonResult).new(res, skip_cache: skip_cache)
   end
 
+  def self.changes(person_id : Int64, start_date : Time? = nil, end_date : Time? = nil) : Array(Change)
+    filters = FilterFactory::Filter.new
+    filters[:start_date] = start_date.to_s("%Y-%m-%d") unless start_date.nil?
+    filters[:end_date] = end_date.to_s("%Y-%m-%d") unless end_date.nil?
+
+    res = Resource.new("/person/#{person_id}/changes", filters)
+    data = res.get
+
+    data["changes"].as_a.map { |change| Change.new(change) }
+  end
+
+  # Get the movie credits for a person.
+  def self.movie_credits(person_id : Int64, language : String? = nil) : Array(Person::Cast | Person::Crew)
+    filters = FilterFactory.create_language(language)
+
+    res = Resource.new("/person/#{person_id}/movie_credits", filters)
+    data = res.get
+    ret = [] of Person::Cast | Person::Crew
+
+    data["cast"].as_a.reduce(ret) { |ret, cast| ret << Person::Cast.new(cast) }
+    data["crew"].as_a.reduce(ret) { |ret, crew| ret << Person::Crew.new(crew) }
+
+    ret
+  end
+
+  # Get the TV show credits for a person.
+  # You can query for some extra details about the credit with the credit method.
+  def self.tv_credits(person_id : Int64, language : String? = nil) : Array(Person::Cast | Person::Crew)
+    filters = FilterFactory.create_language(language)
+
+    res = Resource.new("/person/#{person_id}/tv_credits", filters)
+    data = res.get
+    ret = [] of Person::Cast | Person::Crew
+
+    data["cast"].as_a.reduce(ret) { |ret, cast| ret << Person::Cast.new(cast) }
+    data["crew"].as_a.reduce(ret) { |ret, crew| ret << Person::Crew.new(crew) }
+
+    ret
+  end
+
+  # Get the movie and TV credits together in a single response.
+  def self.combined_credits(person_id : Int64, language : String? = nil) : Array(Person::CombinedCast | Person::CombinedCrew)
+    filters = FilterFactory.create_language(language)
+
+    res = Resource.new("/person/#{person_id}/combined_credits", filters)
+    data = res.get
+    ret = [] of Person::CombinedCast | Person::CombinedCrew
+
+    data["cast"].as_a.reduce(ret) { |ret, cast| ret << Person::CombinedCast.new(cast) }
+    data["crew"].as_a.reduce(ret) { |ret, crew| ret << Person::CombinedCrew.new(crew) }
+
+    ret
+  end
+
+  def self.external_ids(person_id : Int64, language : String? = nil) : Array(ExternalId)
+    filters = FilterFactory.create_language(language)
+
+    res = Resource.new("/person/#{person_id}/external_ids", filters)
+    data = res.get
+    ret = [] of ExternalId
+
+    %w(imdb_id facebook_id freebase_mid freebase_id tvrage_id instagram_id twitter_id).each do |provider|
+      ret << ExternalId.new(provider, data[provider].as_s) if data[provider].as_s?
+    end
+
+    ret
+  end
+
+  # Get a list of translations that have been created for a person.
+  def translations(person_id : Int64, language : String? = nil) : Array(Translation)
+    filters = FilterFactory.create_language(language)
+
+    res = Resource.new("/person/#{person_id}/translations", filters)
+    data = res.get
+    data["translations"].as_a.map { |tr| Translation.new(tr) }
+  end
+
   def initialize(@adult, gender : Int32, @id, @known_for_department, @name, @popularity, @profile_path)
     @gender = Gender.from_value(gender)
     @full_initialized = false
@@ -144,57 +221,23 @@ class Tmdb::Person
   # You can query up to 14 days in a single query by using the `start_date` and
   # `end_date` query parameters.
   def changes(start_date : Time? = nil, end_date : Time? = nil) : Array(Change)
-    filters = FilterFactory::Filter.new
-    filters[:start_date] = start_date.to_s("%Y-%m-%d") unless start_date.nil?
-    filters[:end_date] = end_date.to_s("%Y-%m-%d") unless end_date.nil?
-
-    res = Resource.new("/person/#{id}/changes", filters)
-    data = res.get
-
-    data["changes"].as_a.map { |change| Change.new(change) }
+    self.class.changes(id, start_date, end_date)
   end
 
   # Get the movie credits for a person.
   def movie_credits(language : String? = nil) : Array(Person::Cast | Person::Crew)
-    filters = FilterFactory.create_language(language)
-
-    res = Resource.new("/person/#{id}/movie_credits", filters)
-    data = res.get
-    ret = [] of Person::Cast | Person::Crew
-
-    data["cast"].as_a.reduce(ret) { |ret, cast| ret << Person::Cast.new(cast) }
-    data["crew"].as_a.reduce(ret) { |ret, crew| ret << Person::Crew.new(crew) }
-
-    ret
+    self.class.movie_credits(id, language)
   end
 
   # Get the TV show credits for a person.
   # You can query for some extra details about the credit with the credit method.
   def tv_credits(language : String? = nil) : Array(Person::Cast | Person::Crew)
-    filters = FilterFactory.create_language(language)
-
-    res = Resource.new("/person/#{id}/tv_credits", filters)
-    data = res.get
-    ret = [] of Person::Cast | Person::Crew
-
-    data["cast"].as_a.reduce(ret) { |ret, cast| ret << Person::Cast.new(cast) }
-    data["crew"].as_a.reduce(ret) { |ret, crew| ret << Person::Crew.new(crew) }
-
-    ret
+    self.class.tv_credits(id, language)
   end
 
   # Get the movie and TV credits together in a single response.
   def combined_credits(language : String? = nil) : Array(Person::CombinedCast | Person::CombinedCrew)
-    filters = FilterFactory.create_language(language)
-
-    res = Resource.new("/person/#{id}/combined_credits", filters)
-    data = res.get
-    ret = [] of Person::CombinedCast | Person::CombinedCrew
-
-    data["cast"].as_a.reduce(ret) { |ret, cast| ret << Person::CombinedCast.new(cast) }
-    data["crew"].as_a.reduce(ret) { |ret, crew| ret << Person::CombinedCrew.new(crew) }
-
-    ret
+    self.class.combined_credits(id, language)
   end
 
   # Get the external ids for a person. We currently support the following external
@@ -208,17 +251,7 @@ class Tmdb::Person
   # TVRage ID
   # Twitter
   def external_ids(language : String? = nil) : Array(ExternalId)
-    filters = FilterFactory.create_language(language)
-
-    res = Resource.new("/person/#{id}/external_ids", filters)
-    data = res.get
-    ret = [] of ExternalId
-
-    %w(imdb_id facebook_id freebase_mid freebase_id tvrage_id instagram_id twitter_id).each do |provider|
-      ret << ExternalId.new(provider, data[provider].as_s) if data[provider].as_s?
-    end
-
-    ret
+    self.class.external_ids(id, language)
   end
 
   # Get the images for a person.
@@ -244,11 +277,7 @@ class Tmdb::Person
 
   # Get a list of translations that have been created for a person.
   def translations(language : String? = nil) : Array(Translation)
-    filters = FilterFactory.create_language(language)
-
-    res = Resource.new("/person/#{id}/translations", filters)
-    data = res.get
-    data["translations"].as_a.map { |tr| Translation.new(tr) }
+    self.class.translations(id, language)
   end
 
   private def refresh!

@@ -18,6 +18,11 @@ class Tmdb::Network
     Network.new(res.get)
   end
 
+  def self.alternative_names(network_id : Int64) : Array(String)
+    res = Resource.new("/network/#{network_id}/alternative_names")
+    res.get["results"].as_a.map { |result| result["name"].as_s }
+  end
+
   def initialize(data : JSON::Any)
     @id = data["id"].as_i64
     @logo_path = data["logo_path"].as_s?
@@ -40,8 +45,7 @@ class Tmdb::Network
 
   # Get the alternative names of a network.
   def alternative_names : Array(String)
-    res = Resource.new("/network/#{id}/alternative_names")
-    res.get["results"].as_a.map { |result| result["name"].as_s }
+    self.class.alternative_names(id)
   end
 
   # Get a company logos.

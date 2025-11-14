@@ -28,6 +28,12 @@ class Tmdb::Collection
     Collection.new(res.get)
   end
 
+  # Get the list translations for a collection by id.
+  def self.translations(collection_id : Int64) : Array(Translation)
+    res = Resource.new("/collection/#{collection_id}/translations")
+    res.get["translations"].as_a.map { |tr| Translation.new(tr) }
+  end
+
   def initialize(@id, @name, @poster_path, @backdrop_path)
     @full_initialized = false
   end
@@ -89,10 +95,8 @@ class Tmdb::Collection
     images(language).select(Poster)
   end
 
-  # Get the list translations for a collection by id.
-  def translations(language : String? = nil) : Array(Translation)
-    res = Resource.new("/collection/#{id}/translations")
-    res.get["translations"].as_a.map { |tr| Translation.new(tr) }
+  def translations : Array(Translation)
+    self.class.translations(id)
   end
 
   private def refresh!
