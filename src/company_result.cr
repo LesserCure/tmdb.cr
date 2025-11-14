@@ -17,4 +17,8 @@ class Tmdb::CompanyResult
   def company_detail : Company
     Company.detail(id)
   end
+
+  def alternative_names : Array(String)
+    Company.alternative_names(id)
+  end
 end

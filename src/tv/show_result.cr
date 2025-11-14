@@ -40,4 +40,36 @@ class Tmdb::Tv::ShowResult
   def tv_show_detail : Show
     Show.detail(id)
   end
+
+  def aggregated_credits(language : String? = nil) : Array(Tv::AggregatedCast | Tv::AggregatedCrew)
+    Show.aggregated_credits(id, language)
+  end
+
+  def alternative_titles(language : String? = nil) : Array(AlternativeTitle)
+    Show.alternative_titles(id, language)
+  end
+
+  def content_ratings(language : String? = nil) : Array(Tv::Rating)
+    Show.content_ratings(id, language)
+  end
+
+  def credits(language : String? = nil) : Array(Cast | Crew)
+    Show.credits(id, language)
+  end
+
+  def episode_groups(language : String? = nil) : Array(Tv::EpisodeGroupResult)
+    Show.episode_groups(id, language)
+  end
+
+  def external_ids(language : String? = nil) : Array(ExternalId)
+    Show.external_ids(id, language)
+  end
+
+  def keywords : Array(Keyword)
+    Show.keywords(id)
+  end
+
+  def translations : Array(Tv::Translation)
+    Show.translations(id)
+  end
 end

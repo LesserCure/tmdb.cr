@@ -50,4 +50,36 @@ class Tmdb::MovieResult
     res = Resource.new("/movie/#{id}")
     Movie.detail(id, language)
   end
+
+  def alternative_titles(country : String? = nil) : Array(AlternativeTitle)
+    Movie.alternative_titles(id, country)
+  end
+
+  def credits(language : String? = nil) : Array(Movie::Cast | Movie::Crew)
+    Movie.credits(id, language)
+  end
+
+  def cast(language : String? = nil) : Array(Movie::Cast)
+    Movie.cast(id, language)
+  end
+
+  def crew(language : String? = nil) : Array(Movie::Crew)
+    Movie.crew(id, language)
+  end
+
+  def external_ids : Array(ExternalId)
+    Movie.external_ids(id)
+  end
+
+  def keywords : Array(Keyword)
+    Movie.keywords(id)
+  end
+
+  def release_dates : Array(Tuple(String, Array(Release)))
+    Movie.release_dates(id)
+  end
+
+  def translations : Array(Translation)
+    Movie.translations(id)
+  end
 end

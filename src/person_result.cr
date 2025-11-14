@@ -44,4 +44,24 @@ class Tmdb::PersonResult
   def person_detail : Person
     Person.detail(id)
   end
+
+  def movie_credits(language : String? = nil) : Array(Person::Cast | Person::Crew)
+    Person.movie_credits(id, language)
+  end
+
+  def tv_credits(language : String? = nil) : Array(Person::Cast | Person::Crew)
+    Person.tv_credits(id, language)
+  end
+
+  def combined_credits(language : String? = nil) : Array(Person::CombinedCast | Person::CombinedCrew)
+    Person.combined_credits(id, language)
+  end
+
+  def external_ids(language : String? = nil) : Array(ExternalId)
+    Person.external_ids(id, language)
+  end
+
+  def translations(language : String? = nil) : Array(Translation)
+    Person.translations(id, language)
+  end
 end

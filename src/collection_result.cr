@@ -25,4 +25,8 @@ class Tmdb::CollectionResult
   def collection_detail : Collection
     Collection.detail(id)
   end
+
+  def translations : Array(Translation)
+    Collection.translations(id)
+  end
 end
