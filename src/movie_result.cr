@@ -67,7 +67,7 @@ class Tmdb::MovieResult
     Movie.crew(id, language)
   end
 
-  def external_ids : Array(ExternalId)
+  def external_ids : ExternalIds
     Movie.external_ids(id)
   end
 

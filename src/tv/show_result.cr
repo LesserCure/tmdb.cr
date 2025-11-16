@@ -1,3 +1,4 @@
+require "./external_ids"
 require "./show"
 require "../image_urls"
 
@@ -61,7 +62,7 @@ class Tmdb::Tv::ShowResult
     Show.episode_groups(id, language)
   end
 
-  def external_ids(language : String? = nil) : Array(ExternalId)
+  def external_ids(language : String? = nil) : ExternalIds
     Show.external_ids(id, language)
   end
 

@@ -1,8 +1,8 @@
 require "./crew"
 require "./cast"
+require "./external_ids"
 require "./guest_star"
 require "../filter_factory"
-require "../external_id"
 require "../still_urls"
 require "../change"
 
@@ -58,16 +58,8 @@ class Tmdb::Tv::Episode
     ret
   end
 
-  def self.external_ids(show_id : Int64, season_number : Int32, episode_number : Int32) : Array(ExternalId)
-    res = Resource.new("/tv/#{show_id}/season/#{season_number}/episode/#{episode_number}/external_ids")
-    data = res.get
-    ret = [] of ExternalId
-
-    %w(imdb_id freebase_mid freebase_id tvdb_id tvrage_id).each do |provider|
-      ret << ExternalId.new(provider, data[provider].as_s) if data[provider].as_s?
-    end
-
-    ret
+  def self.external_ids(show_id : Int64, season_number : Int32, episode_number : Int32) : ExternalIds
+    ExternalIds.new(Resource.new("/tv/#{show_id}/season/#{season_number}/episode/#{episode_number}/external_ids").get)
   end
 
   def self.translations(show_id : Int64, season_number : Int32, episode_number : Int32) : Array(Tv::Translation)
@@ -126,7 +118,7 @@ class Tmdb::Tv::Episode
   # * TVRage ID\*
   #
   # \*Defunct or no longer available as a service.
-  def external_ids : Array(ExternalId)
+  def external_ids : ExternalIds
     self.class.external_ids(show_id, season_number, episode_number)
   end
 

@@ -57,7 +57,7 @@ class Tmdb::PersonResult
     Person.combined_credits(id, language)
   end
 
-  def external_ids(language : String? = nil) : Array(ExternalId)
+  def external_ids(language : String? = nil) : ExternalIds
     Person.external_ids(id, language)
   end
 

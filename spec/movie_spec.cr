@@ -84,8 +84,7 @@ describe Tmdb::Movie do
       movie = Tmdb::Movie.detail(218)
       external_ids = movie.external_ids
 
-      external_ids.size.should eq(2)
-      external_ids.should be_a(Array(Tmdb::ExternalId))
+      external_ids.should be_a(Tmdb::Movie::ExternalIds)
     end
   end
 

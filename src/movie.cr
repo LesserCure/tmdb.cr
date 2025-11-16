@@ -6,6 +6,7 @@ require "./language"
 require "./alternative_title"
 require "./movie/cast"
 require "./movie/crew"
+require "./movie/external_ids"
 require "./image"
 require "./release"
 require "./review"
@@ -13,7 +14,6 @@ require "./translation"
 require "./video"
 require "./watch"
 require "./keyword"
-require "./external_id"
 require "./filter_factory"
 require "./image_urls"
 require "./change"
@@ -172,16 +172,8 @@ class Tmdb::Movie
   end
 
   # Get the external ids for a movie.
-  def self.external_ids(movie_id : Int64) : Array(ExternalId)
-    ret = [] of ExternalId
-    res = Resource.new("/movie/#{movie_id}/external_ids")
-    data = res.get
-
-    %w(imdb_id facebook_id instagram_id twitter_id).each do |provider|
-      ret << ExternalId.new(provider, data[provider].as_s) if data[provider].as_s?
-    end
-
-    ret
+  def self.external_ids(movie_id : Int64) : ExternalIds
+    ExternalIds.new(Resource.new("/movie/#{movie_id}/external_ids").get)
   end
 
   # Get the keywords that have been added to a movie.
@@ -318,7 +310,7 @@ class Tmdb::Movie
   # * Facebook
   # * Instagram
   # * Twitter
-  def external_ids : Array(ExternalId)
+  def external_ids : ExternalIds
     self.external_ids(id)
   end
 

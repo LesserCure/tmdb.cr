@@ -73,8 +73,7 @@ describe Tmdb::Tv::Season do
         season = Tmdb::Tv::Season.detail(1418, 1)
         external_ids = season.external_ids
 
-        external_ids.should be_a(Array(Tmdb::ExternalId))
-        external_ids.size.should eq(1)
+        external_ids.should be_a(Tmdb::Tv::Season::ExternalIds)
       end
     end
 
@@ -83,8 +82,7 @@ describe Tmdb::Tv::Season do
         season = Tmdb::Tv::Season.detail(1418, 1)
         external_ids = season.external_ids(language: "es")
 
-        external_ids.should be_a(Array(Tmdb::ExternalId))
-        external_ids.size.should eq(1)
+        external_ids.should be_a(Tmdb::Tv::Season::ExternalIds)
       end
     end
   end

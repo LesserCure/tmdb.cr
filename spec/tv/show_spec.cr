@@ -148,8 +148,7 @@ describe Tmdb::Tv::Show do
         tv_show = Tmdb::Tv::Show.detail(31132)
         external_ids = tv_show.external_ids
 
-        external_ids.should be_a(Array(Tmdb::ExternalId))
-        external_ids.size.should eq(4)
+        external_ids.should be_a(Tmdb::Tv::Show::ExternalIds)
       end
     end
 
@@ -158,8 +157,7 @@ describe Tmdb::Tv::Show do
         tv_show = Tmdb::Tv::Show.detail(31132)
         external_ids = tv_show.external_ids(language: "es")
 
-        external_ids.should be_a(Array(Tmdb::ExternalId))
-        external_ids.size.should eq(4)
+        external_ids.should be_a(Tmdb::Tv::Show::ExternalIds)
       end
     end
   end

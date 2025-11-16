@@ -1,3 +1,4 @@
+require "./external_ids"
 require "../filter_factory"
 require "../poster_urls"
 require "../change"
@@ -67,16 +68,8 @@ class Tmdb::Tv::Season
     ret
   end
 
-  def self.external_ids(show_id : Int64, season_number : Int32, language : String? = nil) : Array(ExternalId)
-    res = Resource.new("/tv/#{show_id}/season/#{season_number}/external_ids", FilterFactory.create_language(language))
-    data = res.get
-    ret = [] of ExternalId
-
-    %w(freebase_mid freebase_id tvdb_id tvrage_id).each do |provider|
-      ret << ExternalId.new(provider, data[provider].as_s) if data[provider].as_s?
-    end
-
-    ret
+  def self.external_ids(show_id : Int64, season_number : Int32, language : String? = nil) : ExternalIds
+    ExternalIds.new(Resource.new("/tv/#{show_id}/season/#{season_number}/external_ids").get)
   end
 
   def self.translations(show_id : Int64, season_number : Int32, language : String? = nil) : Array(Translation)
@@ -128,7 +121,7 @@ class Tmdb::Tv::Season
   # * TVRage ID\*
   #
   # \*Defunct or no longer available as a service.
-  def external_ids(language : String? = nil) : Array(ExternalId)
+  def external_ids(language : String? = nil) : ExternalIds
     self.class.external_ids(show_id, season_number, language)
   end
 

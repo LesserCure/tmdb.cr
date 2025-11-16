@@ -106,8 +106,7 @@ describe Tmdb::Person do
         person = Tmdb::Person.detail(2712)
         external_ids = person.external_ids
 
-        external_ids.size.should eq(3)
-        external_ids.should be_a(Array(Tmdb::ExternalId))
+        external_ids.should be_a(Tmdb::Person::ExternalIds)
       end
     end
   end

@@ -3,11 +3,11 @@ require "../network"
 require "./season"
 require "./aggregated_cast"
 require "./aggregated_crew"
-require "./rating"
 require "./episode_group_result"
+require "./external_ids"
+require "./rating"
 require "./translation"
 require "../alternative_title"
-require "../external_id"
 require "../review"
 require "../filter_factory"
 require "../image_urls"
@@ -186,16 +186,8 @@ class Tmdb::Tv::Show
     res.get["results"].as_a.map { |episode_group| Tv::EpisodeGroupResult.new(episode_group) }
   end
 
-  def self.external_ids(show_id : Int64, language : String? = nil) : Array(ExternalId)
-    res = Resource.new("/tv/#{id}/external_ids", FilterFactory.create_language(language))
-    data = res.get
-    ret = [] of ExternalId
-
-    %w(imdb_id freebase_mid freebase_id tvdb_id tvrage_id facebook_id instagram_id twitter_id).each do |provider|
-      ret << ExternalId.new(provider, data[provider].as_s) if data[provider].as_s?
-    end
-
-    ret
+  def self.external_ids(show_id : Int64, language : String? = nil) : ExternalIds
+    ExternalIds.new(Resource.new("/tv/#{show_id}/external_ids").get)
   end
 
   # Get the keywords that have been added to a TV show.
@@ -337,7 +329,7 @@ class Tmdb::Tv::Show
   # * Twitter
   #
   # \* Defunct or no longer available as a service
-  def external_ids(language : String? = nil) : Array(ExternalId)
+  def external_ids(language : String? = nil) : ExternalIds
     self.class.external_ids(id, language)
   end
 

@@ -2,7 +2,7 @@ require "./filter_factory"
 require "./profile_urls"
 require "./person/cast"
 require "./person/crew"
-require "./external_id"
+require "./person/external_ids"
 require "./image"
 require "./change"
 
@@ -106,18 +106,8 @@ class Tmdb::Person
     ret
   end
 
-  def self.external_ids(person_id : Int64, language : String? = nil) : Array(ExternalId)
-    filters = FilterFactory.create_language(language)
-
-    res = Resource.new("/person/#{person_id}/external_ids", filters)
-    data = res.get
-    ret = [] of ExternalId
-
-    %w(imdb_id facebook_id freebase_mid freebase_id tvrage_id instagram_id twitter_id).each do |provider|
-      ret << ExternalId.new(provider, data[provider].as_s) if data[provider].as_s?
-    end
-
-    ret
+  def self.external_ids(person_id : Int64, language : String? = nil) : ExternalIds
+    ExternalIds.new(Resource.new("/person/#{person_id}/external_ids").get)
   end
 
   # Get a list of translations that have been created for a person.
@@ -250,7 +240,7 @@ class Tmdb::Person
   # Instagram
   # TVRage ID
   # Twitter
-  def external_ids(language : String? = nil) : Array(ExternalId)
+  def external_ids(language : String? = nil) : ExternalIds
     self.class.external_ids(id, language)
   end
 

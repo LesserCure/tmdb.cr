@@ -83,8 +83,7 @@ describe Tmdb::Tv::Episode do
         episode = Tmdb::Tv::Episode.detail(1418, 1, 1)
         external_ids = episode.external_ids
 
-        external_ids.should be_a(Array(Tmdb::ExternalId))
-        external_ids.size.should eq(2)
+        external_ids.should be_a(Tmdb::Tv::Episode::ExternalIds)
       end
     end
   end
