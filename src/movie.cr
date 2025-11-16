@@ -279,7 +279,7 @@ class Tmdb::Movie
 
   # Get all of the alternative titles for a movie.
   def alternative_titles(country : String? = nil) : Array(AlternativeTitle)
-    self.alternative_titles(id, country)
+    self.class.alternative_titles(id, country)
   end
 
   # Get the changes for a movie. By default only the last 24 hours are returned.
@@ -287,20 +287,20 @@ class Tmdb::Movie
   # You can query up to 14 days in a single query by using the `start_date` and
   # `end_date` query parameters.
   def changes(start_date : Time? = nil, end_date : Time? = nil) : Array(Change)
-    self.changes(id, start_date, end_date)
+    self.class.changes(id, start_date, end_date)
   end
 
   # Get the cast and crew for a movie.
   def credits(language : String? = nil) : Array(Movie::Cast | Movie::Crew)
-    self.credits(id, language)
+    self.class.credits(id, language)
   end
 
   def cast(language : String? = nil) : Array(Movie::Cast)
-    self.cast(id, language)
+    self.class.cast(id, language)
   end
 
   def crew(language : String? = nil) : Array(Movie::Crew)
-    self.crew(id, language)
+    self.class.crew(id, language)
   end
 
   # Get the external ids for a movie. We currently support the following
@@ -311,7 +311,7 @@ class Tmdb::Movie
   # * Instagram
   # * Twitter
   def external_ids : ExternalIds
-    self.external_ids(id)
+    self.class.external_ids(id)
   end
 
   # Get the images that belong to a movie.
