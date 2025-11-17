@@ -39,21 +39,6 @@ class Tmdb::Tv::Season
     ret
   end
 
-  # Get the changes for a movie. By default only the last 24 hours are returned.
-  #
-  # You can query up to 14 days in a single query by using the `start_date` and
-  # `end_date` query parameters.
-  def self.changes(show_id : Int64, season_number : Int32, start_date : Time? = nil, end_date : Time? = nil) : Array(Change)
-    filters = FilterFactory::Filter.new
-    filters[:start_date] = start_date.to_s("%Y-%m-%d") unless start_date.nil?
-    filters[:end_date] = end_date.to_s("%Y-%m-%d") unless end_date.nil?
-
-    res = Resource.new("/tv/season/#{id}/changes", filters)
-    data = res.get
-
-    data["changes"].as_a.map { |change| Change.new(change) }
-  end
-
   # Get the credits for TV season.
   def self.credits(show_id : Int64, season_number : Int32, language : String? = nil) : Array(Tv::Cast | Tv:: Crew)
     filters = FilterFactory.create_language(language)
@@ -104,7 +89,14 @@ class Tmdb::Tv::Season
   # You can query up to 14 days in a single query by using the `start_date` and
   # `end_date` query parameters.
   def changes(start_date : Time? = nil, end_date : Time? = nil) : Array(Change)
-    self.class.changes(show_id, season_number, start_date, end_date)
+    filters = FilterFactory::Filter.new
+    filters[:start_date] = start_date.to_s("%Y-%m-%d") unless start_date.nil?
+    filters[:end_date] = end_date.to_s("%Y-%m-%d") unless end_date.nil?
+
+    res = Resource.new("/tv/season/#{id}/changes", filters)
+    data = res.get
+
+    data["changes"].as_a.map { |change| Change.new(change) }
   end
 
   # Get the credits for TV season.
