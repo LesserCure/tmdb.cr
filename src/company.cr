@@ -22,7 +22,7 @@ class Tmdb::Company
   end
 
   # Get the alternative names of a company by id.
-  def alternative_names(company_id : Int64) : Array(String)
+  def self.alternative_names(company_id : Int64) : Array(String)
     res = Resource.new("/company/#{company_id}/alternative_names")
     res.get["results"].as_a.map { |an| an["name"].as_s }
   rescue NotFound
