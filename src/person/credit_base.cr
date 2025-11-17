@@ -35,7 +35,7 @@ class Tmdb::Person
       @poster_path = data["poster_path"].as_s?
       @genre_ids = data["genre_ids"].as_a.map(&.as_i)
       @popularity = data["popularity"].as_f
-      @release_date = data["release_date"]? ? Time.parse(data["release_date"].as_s, "%Y-%m-%d", Time::Location::UTC) : nil
+      @release_date = data["release_date"]?.try(&.as_s.presence) ? Time.parse(data["release_date"].as_s, "%Y-%m-%d", Time::Location::UTC) : nil
       @title = data["title"]? ? data["title"].as_s : nil
     end
 
