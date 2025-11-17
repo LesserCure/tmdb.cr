@@ -16,7 +16,6 @@ class Tmdb::Person
 
     def initialize(@data : JSON::Any)
       @imdb_id = @data["imdb_id"].as_s?
-      @tvdb_id = @data["tvdb_id"].as_s?
       @wikidata_id = @data["wikidata_id"].as_s?
       @facebook_id = @data["facebook_id"].as_s?
       @instagram_id = @data["instagram_id"].as_s?

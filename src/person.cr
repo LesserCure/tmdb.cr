@@ -111,7 +111,7 @@ class Tmdb::Person
   end
 
   # Get a list of translations that have been created for a person.
-  def translations(person_id : Int64, language : String? = nil) : Array(Translation)
+  def self.translations(person_id : Int64, language : String? = nil) : Array(Translation)
     filters = FilterFactory.create_language(language)
 
     res = Resource.new("/person/#{person_id}/translations", filters)
